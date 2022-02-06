@@ -1,0 +1,50 @@
+{
+    "config": {
+        "error": {
+            "auth": "Authentication failed.",
+            "empty_response": "No content returned from module.",
+            "empty_name": "A meter name must be specified.",
+            "invalid_url": "Url is invalid.",
+            "request_failed": "Request to url failed.",
+            "unexpected_response": "Unexpected response from web service.",
+            "scan_interval_integer": "Must be an integer value.",
+            "scan_interval_outofbounds": "Must be between 5 and 3600."
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Meter name",
+                    "url": "URL to reader module"
+                },
+                "description": "Enter connection info",
+                "title": "Connection"
+            }
+        }
+    },
+
+    "options": {
+        "error": {
+            "auth": "Authentication failed.",
+            "empty_response": "No content returned from module.",
+            "empty_name": "A meter name must be specified.",
+            "invalid_url": "Url is invalid.",
+            "request_failed": "Request to url failed.",
+            "unexpected_response": "Unexpected response from web service.",
+            "scan_interval_integer": "Must be an integer value.",
+            "scan_interval_outofbounds": "Must be between 5 and 3600."
+        },
+        "step": {
+            "init": {
+                "data": {
+                    "name": "Meter name",
+                    "url": "URL to reader module",
+                    "show_things": "show_things",
+                    "scan_interval": "Scan interval (seconds)"
+                },
+                "description": "Enter connection info",
+                "title": "Connection"
+            }
+        }
+    }
+
+}

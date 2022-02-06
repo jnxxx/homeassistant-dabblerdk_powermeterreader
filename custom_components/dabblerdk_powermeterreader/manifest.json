@@ -1,0 +1,15 @@
+{
+  "domain": "dabblerdk_powermeterreader",
+  "name": "Dabbler.dk reader for Echelon/NES smart power meter",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/jnxxx/dabblerdk_powermeterreader/",
+  "issue_tracker": "https://github.com/jnxxx/dabblerdk_powermeterreader/issues",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": ["@jnxxx"],
+  "iot_class": "local_polling"
+}
