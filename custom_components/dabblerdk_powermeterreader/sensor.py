@@ -185,7 +185,7 @@ class MeterEntity(Entity):
     @property
     def unique_id(self):
         """The unique id of the sensor."""
-        _LOGGER.debug(f"Returning unique_id: {self._unique_id}")
+        #_LOGGER.debug(f"Returning unique_id: {self._unique_id}")
         return self._unique_id
 
     @property

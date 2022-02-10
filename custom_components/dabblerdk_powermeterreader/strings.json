@@ -14,10 +14,10 @@
             "user": {
                 "data": {
                     "name": "Meter name",
-                    "url": "URL to reader module"
+                    "url": "URL to MEP module"
                 },
                 "description": "Enter connection info",
-                "title": "Connection"
+                "title": "Configure MEP module"
             }
         }
     },
@@ -36,15 +36,14 @@
         "step": {
             "init": {
                 "data": {
-                    "name": "Meter name",
-                    "url": "URL to reader module",
-                    "show_things": "show_things",
+                    "url": "URL to MEP module",
                     "scan_interval": "Scan interval (seconds)"
                 },
-                "description": "Enter connection info",
-                "title": "Connection"
+                "description": "Edit url or change update frequency",
+                "title": "Edit connection settings"
             }
         }
     }
+
 
 }

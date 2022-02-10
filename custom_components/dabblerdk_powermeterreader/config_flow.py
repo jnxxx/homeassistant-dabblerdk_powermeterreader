@@ -124,7 +124,7 @@ async def fnCheckUrl(url, errors: Dict[str, str]):
             data = await client._get_meter_data()
 
             try:
-                for param in ["Fwd_Act_Wh", "Rev_Act_Wh", "L1_RMS_A", "L2_RMS_A", "L3_RMS_A", "L1_RMS_V", "L2_RMS_V", "L3_RMS_V"]:
+                for param in ["Fwd_Act_Wh", "Rev_Act_Wh", "L1_RMS_A", "L2_RMS_A", "L3_RMS_A", "L1_RMS_V", "L2_RMS_V", "L3_RMS_V", "Fwd_W", "Rev_W", "L1_Fwd_W", "L2_Fwd_W", "L3_Fwd_W", "L1_Rev_W", "L2_Rev_W", "L3_Rev_W"]:
                     num = int(data[param])
             except:
                 errors[CONF_URL] = "unexpected_response"

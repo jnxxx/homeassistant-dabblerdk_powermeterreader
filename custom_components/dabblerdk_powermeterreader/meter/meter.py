@@ -30,6 +30,12 @@ class MeterReader:
         self._lockUpdate = asyncio.Lock()
 #        self._fail_count = 0
         self._succeed_timestamp = datetime.utcnow()
+        self._connected = False
+        self._sticking_with_prev_value = False
+
+#        self._debugcount = 0
+        _LOGGER.debug("Meter init")
+
 
 
     # async def _get_next_service_data_predicted(self, id):
@@ -153,14 +159,32 @@ class MeterReader:
 
     #   return(vehicles)
 
+    async def _is_connected(self):
+      ret = None
+      async with self._lockUpdate:
+        ret = self._connected
+      return(ret)
+
+    async def _is_stuck_with_prev_value(self):
+      ret = None
+      async with self._lockUpdate:
+        ret = self._sticking_with_prev_value
+      return(ret)
+
 
     async def _get_meter_data(self):
       """Read data from API."""
 
+#      self._debugcount = self._debugcount + 1
+#      dbgcnt = self._debugcount
+
       async with self._lockUpdate:
         if self._data_expires == None or self._data == None or datetime.utcnow() > self._data_expires:
           self._data_expires = None
-#          self._data = None
+          #self._data = None
+          self._connected = False
+
+#          _LOGGER.debug(f"_get_meter_data: {dbgcnt}, time: {self._data_expires}")
 
           headers = {
               "Accept": "application/json",
@@ -174,17 +198,20 @@ class MeterReader:
               async with session.get(req_url, headers = headers) as response:
                 temp = await response.json()
 #                temp = json.loads('')
+                self._connected = True
                 if temp is not None:
                   _LOGGER.debug(f"Got meter data: {json.dumps(temp)}")
                   
                   # Fwd_Act_Wh has been seen to jump temporarily, which messes up the delta when using state_class=total_increasing
                   # Ignore negative or more than 1000 wh increase for an hour or until restarted.
+                  self._sticking_with_prev_value = False
                   if self._data is not None:
                     energy_prev = self._data["Fwd_Act_Wh"]
                     energy_now = temp["Fwd_Act_Wh"]
 
                     if energy_now is None:
                       _LOGGER.warn(f"Fwd_Act_Wh is None, sticking to previous values")
+                      self._sticking_with_prev_value = True
                     else:
                       diff = energy_now - energy_prev
                       if energy_prev is None or (diff >= 0 and diff <= 1000) or (datetime.utcnow()-self._succeed_timestamp).seconds >= 3600:
@@ -192,6 +219,7 @@ class MeterReader:
                         self._succeed_timestamp = datetime.utcnow()
                       else:
                         _LOGGER.warn(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
+                        self._sticking_with_prev_value = True
 
                   else:
                     self._data = temp
@@ -203,6 +231,8 @@ class MeterReader:
           except aiohttp.ClientError as client_error:
               _LOGGER.warn(f"Requesting meter values failed: {client_error}")
               raise Exception(f"Requesting meter values failed: {client_error}")
+
+#        _LOGGER.debug(f"_get_meter_data end: {dbgcnt}, time: {self._data_expires}")
 
       return(self._data)
 

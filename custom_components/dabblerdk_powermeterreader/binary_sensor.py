@@ -42,6 +42,7 @@ async def async_setup_entry(
     try:
         sensors = []
         sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Connection", "connectivity", True, True, _meterclient))
+        sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Problem", "problem", True, True, _meterclient))
         # sensors.append(MeterBinaryEntity(config["name"], "Health", "", "problem", True, _meterclient))
         # sensors.append(MeterBinaryEntity(config["name"], "Lamp", lampState, "problem", False, _meterclient))
         async_add_entities(sensors, update_before_add=True)
@@ -70,6 +71,7 @@ class MeterBinaryEntity(BinarySensorEntity):
         self._manufacturer = None
         self._model = None
         self._sw_version = None
+        self._prev_time = None
 
         _LOGGER.debug(f"Adding sensor: {self._name}")
 
@@ -113,7 +115,7 @@ class MeterBinaryEntity(BinarySensorEntity):
     @property
     def unique_id(self):
         """The unique id of the sensor."""
-        _LOGGER.debug(f"Returning unique_id: {self._unique_id}")
+        #_LOGGER.debug(f"Returning unique_id: {self._unique_id}")
         return self._unique_id
 
     @property
@@ -131,6 +133,8 @@ class MeterBinaryEntity(BinarySensorEntity):
     async def async_update(self):
         self._is_on = None
 
+        _LOGGER.debug(f"Setting status for {self._name}")
+
         try:
             # Unique ID
             meter_sn = await self._meterclient._get_value(["Utility_SN"])
@@ -139,8 +143,6 @@ class MeterBinaryEntity(BinarySensorEntity):
                 self._meter_sn = meter_sn
                 self._unique_id = f"{DOMAIN}-{self._meter_sn}-{mep}-{self._itemName}".replace('--', '-')
 
-            if self._itemName == "Connection":
-                self._is_on = True
             # elif self._itemName == "Health":
             #     self._is_on = str(await self._meterclient._get_value(["health", "ok"])).lower() != "true"
             # elif self._itemName == "Lamp":
@@ -149,6 +151,38 @@ class MeterBinaryEntity(BinarySensorEntity):
         except Exception as e:
             _LOGGER.warning(f"Failed to update binary sensor {self._name}: {e}")
             _LOGGER.debug(f"{traceback.format_exc()}")
+
+        if self._itemName == "Connection":
+            self._is_on = await self._meterclient._is_connected()
+
+        if self._itemName == "Problem":
+            try:
+                self._is_on = False
+                data = await self._meterclient._get_meter_data()
+
+                if (data is None):
+                    self._is_on = True
+                    _LOGGER.debug(f"Problem: data is None")
+                else:
+                    if (data["CurrentDateTime"] != self._prev_time):
+                        self._prev_time = data["CurrentDateTime"]
+                    else:
+                        self._is_on = True
+                        _LOGGER.debug(f"Problem: CurrentDateTime is the same as previous")
+
+                    try:
+                        for param in ["Fwd_Act_Wh", "Rev_Act_Wh", "L1_RMS_A", "L2_RMS_A", "L3_RMS_A", "L1_RMS_V", "L2_RMS_V", "L3_RMS_V", "Fwd_W", "Rev_W", "L1_Fwd_W", "L2_Fwd_W", "L3_Fwd_W", "L1_Rev_W", "L2_Rev_W", "L3_Rev_W"]:
+                            num = int(data[param])
+                    except:
+                        self._is_on = True
+                        _LOGGER.debug(f"Problem: CurrentDateTime has not changed")
+
+                    if (await self._meterclient._is_stuck_with_prev_value()):
+                        self._is_on = True
+                        _LOGGER.debug(f"Problem: Sticking with previous value")
+            except:
+                self._is_on = True
+                _LOGGER.debug(f"Problem: Exception")
 
         try:
             if self._is_mep:

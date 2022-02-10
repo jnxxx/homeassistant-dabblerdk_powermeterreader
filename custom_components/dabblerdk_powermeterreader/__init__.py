@@ -54,7 +54,7 @@ async def async_setup_entry(
             hass.config_entries.async_forward_entry_setup(entry, component)
         )
 
-    await signal_refresh()
+#    await signal_refresh()
     return True
 
 
