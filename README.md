@@ -33,7 +33,7 @@ It is configurable through config flow, meaning it will popup a dialog after add
   1. Head to Configuration --> Integrations
   2. Add new and search for `Dabbler.dk reader for Echelon/NES smart power meter` 
   3. Enter a name for your meter. It suggests "Echelon" by default, but if you plan to read multiple make it a unique name.
-  4. Enter a url to the MEP module. For example: "http://" followed by the IP.
+  4. Enter a url to the MEP module. For example: "http://" followed by its IP or name.
 
 #### Options
 By utilizing options flow it allows for updating the url to the MEP module and adjusting the scan interval / update frequency.
