@@ -3,7 +3,7 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
-This is a companion integration to the Dabbler.dk MEP module for reading out power consumption values from the `Echelon/NES smart meter`. At least from model 83331-3I, which among others is used quite a lot in Denmark. 
+This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP module for reading out power consumption values from the `Echelon/NES smart meter`. At least from model 83331-3I, which among others is used quite a lot in Denmark. 
 ![Echelon Smart Meter](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/meter.png) ![NES brand](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/nes.png)
 
 ## Hardware
@@ -95,12 +95,13 @@ Devices
 
 ![Config](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/metermep.png)
 
-Readings:
+Readings
+
 ![Config](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/graphconsumption.png)
 
 ![Config](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/graphpower.png)
 
-Energy dashboard:
+Energy dashboard
 ![Config](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/energyday.png)
 
 ![Config](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/energyweek.png)
