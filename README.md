@@ -3,11 +3,11 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
-This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP module for reading out power consumption values from the `Echelon/NES smart meter`. At least from model 83331-3I, which among others is used quite a lot in Denmark. 
+This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP module for reading out power consumption values from a Echelon/[NES](https://frient.dk/products/electricity-meter-interface/) smart meter with a MEP port. At least from model 83331-3I, which among others is used quite a lot in Denmark. 
 ![Echelon Smart Meter](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/meter.png) ![NES brand](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/nes.png)
 
 ## Hardware
-Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at Dabbler.dk, which plugs into the MEP port of the meter.
+Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at [Dabbler.dk](http://dabbler.dk/), which plugs into the MEP port of the meter.
 Read more about it at [their blog](https://www.dabbler.dk/index.php/blog/).
 
 The protocol is still covered by NDA, but a prototype is working.
@@ -59,6 +59,7 @@ Meter sensors, consumption:
 * L1 voltage [V]
 * L2 voltage [V]
 * L3 voltage [V]
+* Frequency [Hz]
 
 Meter sensors, returned to grid:
 * Energy returned [kWh]
