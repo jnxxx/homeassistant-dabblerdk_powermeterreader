@@ -1,4 +1,4 @@
-"""Support for connectedcars.io / Min Volkswagen integration."""
+"""Support for dabblerdk_powermeterreader."""
 
 import logging
 from datetime import datetime, timedelta
@@ -43,8 +43,6 @@ async def async_setup_entry(
         sensors = []
         sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Connection", "connectivity", True, True, _meterclient))
         sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Problem", "problem", True, True, _meterclient))
-        # sensors.append(MeterBinaryEntity(config["name"], "Health", "", "problem", True, _meterclient))
-        # sensors.append(MeterBinaryEntity(config["name"], "Lamp", lampState, "problem", False, _meterclient))
         async_add_entities(sensors, update_before_add=True)
 
     except Exception as e:

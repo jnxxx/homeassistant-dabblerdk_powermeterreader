@@ -1,3 +1,3 @@
-"""Support for connectedcars.io / Min Volkswagen integration."""
+"""Support for dabblerdk_powermeterreader."""
 
 DOMAIN = "dabblerdk_powermeterreader"

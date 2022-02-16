@@ -1,1 +1,1 @@
-"""Wrapper for connectedcars.io."""
+"""Wrapper for dabbler.dk MEP module."""

@@ -1,4 +1,4 @@
-"""Support for connectedcars.io / Min Volkswagen integration."""
+"""Support for dabblerdk_powermeterreader."""
 
 import logging
 import asyncio
@@ -14,7 +14,6 @@ from homeassistant.const import CONF_SCAN_INTERVAL
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "binary_sensor"]
 
-#SIGNAL_UPDATE_REFRESH = "dabblerdk_powermeterreader"
 
 async def async_setup_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
@@ -45,7 +44,7 @@ async def async_setup_entry(
     # data["namespace"] = entry.data["namespace"]
     data["name"] = entry.data["name"]
     data["url"] = entry.data["url"]
-    data["meterclient"] = MeterReader("", "", "", entry.data["url"])
+    data["meterclient"] = MeterReader(entry.data["url"])
     hass.data[DOMAIN][entry.entry_id] = data #entry.data
 
     # Forward the setup to the sensor platform.
@@ -83,12 +82,19 @@ async def async_unload_entry(
         _LOGGER.debug("Remove timer")
         data["timer_remove"]()
 
-
-    unload_ok = all(
-        await asyncio.gather(
-            *[hass.config_entries.async_forward_entry_unload(entry, "sensor")]
+    unloaded = []
+    for component in PLATFORMS:
+        unloaded.append(
+            await asyncio.gather(
+                *[hass.config_entries.async_forward_entry_unload(entry, component)]
+            )
         )
-    )
+    unload_ok = all(unloaded)
+    #         await asyncio.gather(
+    #             *[hass.config_entries.async_forward_entry_unload(entry, component)]
+    #         )
+    # )
+
     # Remove options_update_listener.
     hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
 

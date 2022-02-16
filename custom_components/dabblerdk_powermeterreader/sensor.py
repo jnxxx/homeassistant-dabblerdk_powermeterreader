@@ -1,4 +1,4 @@
-"""Support for connectedcars.io / Min Volkswagen integration."""
+"""Support for dabblerdk_powermeterreader."""
 
 import logging
 from datetime import datetime, timedelta
@@ -7,12 +7,10 @@ import traceback
 
 from homeassistant import config_entries, core
 from homeassistant.core import callback
-from homeassistant.const import TEMP_CELSIUS, ELECTRIC_POTENTIAL_VOLT, ELECTRIC_CURRENT_AMPERE, POWER_WATT, DEVICE_CLASS_VOLTAGE, DEVICE_CLASS_CURRENT, DEVICE_CLASS_POWER, VOLUME_LITERS, PERCENTAGE, LENGTH_KILOMETERS, DEVICE_CLASS_BATTERY, ENERGY_KILO_WATT_HOUR, DEVICE_CLASS_ENERGY
+from homeassistant.const import TEMP_CELSIUS, ELECTRIC_POTENTIAL_VOLT, ELECTRIC_CURRENT_AMPERE, POWER_WATT, DEVICE_CLASS_VOLTAGE, DEVICE_CLASS_CURRENT, DEVICE_CLASS_POWER, VOLUME_LITERS, PERCENTAGE, LENGTH_KILOMETERS, DEVICE_CLASS_BATTERY, ENERGY_KILO_WATT_HOUR, DEVICE_CLASS_ENERGY, FREQUENCY_HERTZ, DEVICE_CLASS_FREQUENCY
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-#from homeassistant.components.device_tracker.config_entry import TrackerEntity
-#from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.typing import (
     ConfigType,
     DiscoveryInfoType,
@@ -59,14 +57,7 @@ async def async_setup_entry(
         sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L1", True, False, _meterclient))
         sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L2", True, False, _meterclient))
         sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L3", True, False, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "BatteryVoltage", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "fuelPercentage", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "fuelLevel", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "odometer", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "NextServicePredicted", False, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "EVchargePercentage", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "EVHVBattTemp", True, _meterclient))
-        # sensors.append(MeterEntity(vehicle, "Speed", True, _meterclient))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "frequency", "", False, False, _meterclient))
         async_add_entities(sensors, update_before_add=True)
 
     except Exception as e:
@@ -122,34 +113,10 @@ class MeterEntity(Entity):
             self._unit = POWER_WATT
             self._icon = "mdi:flash"
             self._device_class = DEVICE_CLASS_POWER
-        # elif self._itemName == "BatteryVoltage":
-        #     self._unit = ELECTRIC_POTENTIAL_VOLT
-        #     self._icon = "mdi:car-battery"
-        #     self._device_class = DEVICE_CLASS_VOLTAGE
-        # elif self._itemName == "fuelLevel":
-        #     self._unit = VOLUME_LITERS
-        #     self._icon = "mdi:gas-station"
-        #     #self._device_class = DEVICE_CLASS_VOLTAGE
-        # elif self._itemName == "odometer":
-        #     self._unit = LENGTH_KILOMETERS
-        #     self._icon = "mdi:counter"
-        #     #self._device_class = DEVICE_CLASS_VOLTAGE
-        # elif self._itemName == "NextServicePredicted":
-        #     #self._unit = ATTR_LOCATION
-        #     self._icon = "mdi:wrench"
-        #     self._device_class = "date"  # DEVICE_CLASS_DATE
-        # elif self._itemName == "EVchargePercentage":
-        #     self._unit = PERCENTAGE
-        #     self._icon = "mdi:battery"
-        #     self._device_class = DEVICE_CLASS_BATTERY
-        # elif self._itemName == "EVHVBattTemp":
-        #     self._unit = TEMP_CELSIUS
-        #     self._icon = "mdi:thermometer"
-        #     self._device_class = DEVICE_CLASS_TEMPERATURE
-        # elif self._itemName == "Speed":
-        #     self._unit = SPEED_KILOMETERS_PER_HOUR
-        #     self._icon = "mdi:speedometer"
-#            self._device_class = SPEED
+        elif self._itemName == "frequency":
+            self._unit = FREQUENCY_HERTZ
+            self._icon = "mdi:sine-wave"
+            self._device_class = DEVICE_CLASS_FREQUENCY 
 
         _LOGGER.debug(f"Adding sensor: {self._name}")
 
@@ -260,37 +227,10 @@ class MeterEntity(Entity):
                 # voltage = await self._meterclient._get_value([ self._phase + "_RMS_V"])
                 # if (current is not None and voltage is not None):
                 #     self._state = round((int(current) / 1000) * (int(voltage) / 1000), 3)
-
-
-
-            # if self._itemName == "BatteryVoltage":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["latestBatteryVoltage", "voltage"])
-            # if self._itemName == "fuelPercentage":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["fuelPercentage", "percent"])
-            # if self._itemName == "fuelLevel":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["fuelLevel", "liter"])
-            # if self._itemName == "odometer":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["odometer", "odometer"])
-            # if self._itemName == "NextServicePredicted":
-            #     self._state = await self._meterclient._get_next_service_data_predicted(self._vehicle['id'])
-            # if self._itemName == "Speed":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["position", "speed"])
-            #     self._dict["Direction"] = await self._meterclient._get_value(self._vehicle['id'], ["position", "direction"])
-            #     direction = self._dict["Direction"]
-                #_LOGGER.debug(f"Speed: {self._state} km/h, direction: {direction}")
-
-            # EV
-            # if self._itemName == "EVchargePercentage":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["chargePercentage", "percent"])
-            #     batlevel = round(self._state / 10)*10
-            #     if batlevel == 100:
-            #         self._icon = "mdi:battery"
-            #     elif batlevel == 0:
-            #         self._icon = "mdi:battery-outline"
-            #     else:
-            #         self._icon = f"mdi:battery-{batlevel}"
-            # if self._itemName == "EVHVBattTemp":
-            #     self._state = await self._meterclient._get_value(self._vehicle['id'], ["highVoltageBatteryTemperature", "celsius"])
+            if self._itemName == "frequency":
+                frequency = await self._meterclient._get_value(["Freq_mHz"])
+                if (frequency is not None):
+                    self._state = int(frequency) / 1000
 
         except Exception as e:
             _LOGGER.warning(f"Failed to update sensor {self._name}: {e}")

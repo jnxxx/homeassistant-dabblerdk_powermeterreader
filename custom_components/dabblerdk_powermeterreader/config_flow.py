@@ -1,4 +1,4 @@
-"""Support for connectedcars.io / Min Volkswagen integration."""
+"""Support for dabblerdk_powermeterreader."""
 
 import logging
 from typing import Any, Dict, Optional
@@ -20,9 +20,6 @@ _LOGGER = logging.getLogger(__name__)
 
 CONN_SCHEMA = vol.Schema(
     {
-#        vol.Required(CONF_EMAIL): cv.string,
-#        vol.Required(CONF_PASSWORD): cv.string,
-#        vol.Required("namespace", default="minvolkswagen"): cv.string,
         vol.Required(CONF_NAME, default="Echelon"): cv.string,
         vol.Required(CONF_URL, default="http://module_ip"): cv.string,
     }
@@ -120,7 +117,7 @@ async def fnCheckUrl(url, errors: Dict[str, str]):
         errors[CONF_URL] = "invalid_url"
     else:
         try:
-            client = MeterReader("", "", "", url)
+            client = MeterReader(url)
             data = await client._get_meter_data()
 
             try:
