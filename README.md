@@ -4,7 +4,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
 This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP module for reading out power consumption values from a Echelon/[NES](https://www.networkedenergy.com/) smart meter with a MEP port. At least from model 83331-3I, which among others is used quite a lot in Denmark.  
-![Echelon Smart Meter](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/meter.png) ![NES brand](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/nes.png)
+![Echelon Smart Meter](https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/raw/main/images/meter.png)
+
 
 ## Hardware
 Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at [Dabbler.dk](http://dabbler.dk/), which plugs into the MEP port of the meter.
