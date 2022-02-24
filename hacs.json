@@ -1,5 +1,5 @@
 {
   "name": "Dabbler.dk reader for Echelon/NES smart power meter",
-  "render_readme": true
+  "render_readme": true,
+  "country": "DK"
 }
-
