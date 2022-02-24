@@ -1,7 +1,7 @@
 {
   "domain": "dabblerdk_powermeterreader",
   "name": "Dabbler.dk reader for Echelon/NES smart power meter",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "config_flow": true,
   "documentation": "https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/",
   "issue_tracker": "https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/issues",
