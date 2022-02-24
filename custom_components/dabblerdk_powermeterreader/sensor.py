@@ -113,6 +113,7 @@ class MeterEntity(Entity):
             self._unit = POWER_WATT
             self._icon = "mdi:flash"
             self._device_class = DEVICE_CLASS_POWER
+            self._dict["state_class"] = "measurement"
         elif self._itemName == "frequency":
             self._unit = FREQUENCY_HERTZ
             self._icon = "mdi:sine-wave"
