@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 CONN_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME, default="Echelon"): cv.string,
-        vol.Required(CONF_URL, default="http://module_ip"): cv.string,
+        vol.Required(CONF_URL, default="http://esp32-mep.local/"): cv.string,
     }
 )
 
@@ -38,7 +38,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_NAME] = "empty_name"
             
             # Check url
-            await fnCheckUrl(user_input[CONF_URL], errors)
+            await fnCheckUrl(user_input[CONF_URL], self.hass, errors)
 
             # try:
             #     client = MeterReader("", "", "", user_input[CONF_URL])
@@ -81,7 +81,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
 
             # Check url
-            await fnCheckUrl(user_input[CONF_URL], errors)
+            await fnCheckUrl(user_input[CONF_URL], self.hass, errors)
 
             # Check scan_interval
             try:
@@ -112,12 +112,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         )
 
 
-async def fnCheckUrl(url, errors: Dict[str, str]):
+async def fnCheckUrl(url, hass, errors: Dict[str, str]):
     if re.search("^http(s){0,1}:\/\/[a-zA-Z0-9_\-\.]+(:\d+){0,1}\/{0,1}$", url) is None:
         errors[CONF_URL] = "invalid_url"
     else:
         try:
-            client = MeterReader(url)
+            client = MeterReader(url, hass)
             data = await client._get_meter_data()
 
             try:

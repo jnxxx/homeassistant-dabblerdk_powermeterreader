@@ -44,7 +44,7 @@ async def async_setup_entry(
     # data["namespace"] = entry.data["namespace"]
     data["name"] = entry.data["name"]
     data["url"] = entry.data["url"]
-    data["meterclient"] = MeterReader(entry.data["url"])
+    data["meterclient"] = MeterReader(entry.data["url"], hass)
     hass.data[DOMAIN][entry.entry_id] = data #entry.data
 
     # Forward the setup to the sensor platform.

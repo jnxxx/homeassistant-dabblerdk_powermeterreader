@@ -7,6 +7,9 @@ import aiohttp
 import asyncio
 import logging
 import hashlib
+from homeassistant.components import zeroconf
+from zeroconf.asyncio import AsyncServiceInfo
+from urllib.parse import urlparse
 
 # Test
 import random
@@ -17,7 +20,7 @@ class MeterReader:
     '''
     Primary exported interface for dabbler.dk MEP module wrapper.
     '''
-    def __init__(self, target_url):
+    def __init__(self, target_url, hass):
         self._base_url = target_url.strip("/")
         self._data = None
         self._data_expires = None
@@ -26,6 +29,7 @@ class MeterReader:
         self._succeed_timestamp = datetime.utcnow()
         self._connected = False
         self._sticking_with_prev_value = False
+        self._hass = hass
 
 #        self._debugcount = 0
         _LOGGER.debug("Meter init")
@@ -77,12 +81,36 @@ class MeterReader:
 
 #          _LOGGER.debug(f"_get_meter_data: {dbgcnt}, time: {self._data_expires}")
 
+          url = urlparse(self._base_url)
+          try:
+            aryhost = url.netloc.split(':')
+            host = aryhost[0]
+
+            # Resolve local names using mdns
+            if (host.rstrip('.').endswith(".local")):
+              _LOGGER.debug(f"Resolving name: {host}")
+              #logging.getLogger('zeroconf').setLevel(logging.DEBUG)
+              aiozc = await zeroconf.async_get_async_instance(self._hass)
+
+              info = AsyncServiceInfo("local.", f"{host.rstrip('.')}.")
+              bFound = await info.async_request(aiozc.zeroconf, 3000)
+
+              if info and bFound:
+                  for addr in info.parsed_addresses():
+                    host = addr if (len(aryhost) == 1) else f"{addr}:{aryhost[1]}"
+                    url = url._replace(netloc=host)
+                    _LOGGER.debug(f"  Url: {url.geturl()}")
+                    break
+          except BaseException as err:
+            _LOGGER.warn(f"Zeroconf failed. {err}")
+          #logging.getLogger('zeroconf').setLevel(logging.WARNING)
+
           headers = {
               "Accept": "application/json",
               "User-Agent": "HomeAssistent integration dabblerdk_powermeterreader",
           }
 
-          req_url = f"{self._base_url}/getDashDataWS"
+          req_url = f"{url.geturl()}/getDashDataWS"
 
           try:
             async with aiohttp.ClientSession() as session:
@@ -92,7 +120,11 @@ class MeterReader:
                 self._connected = True
                 if temp is not None:
                   _LOGGER.debug(f"Got meter data: {json.dumps(temp)}")
-                  
+
+                  # Debug: Log received data when L3 power is above 10000
+                  if (temp["L3_Fwd_W"] > 10000):
+                    _LOGGER.warn(f"L3_Fwd_W > 10000: {json.dumps(temp)}")
+
                   # Fwd_Act_Wh has been seen to jump temporarily, which messes up the delta when using state_class=total_increasing
                   # Ignore negative or more than 1000 wh increase for an hour or until restarted.
                   self._sticking_with_prev_value = False

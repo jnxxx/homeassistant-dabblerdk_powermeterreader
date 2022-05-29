@@ -9,7 +9,7 @@
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
-  "dependencies": [],
+  "dependencies": ["zeroconf"],
   "codeowners": ["@jnxxx"],
   "iot_class": "local_polling"
 }
