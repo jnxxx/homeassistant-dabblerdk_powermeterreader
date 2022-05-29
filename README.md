@@ -8,11 +8,9 @@ This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP modu
 
 
 ## Hardware
-Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at [Dabbler.dk](http://dabbler.dk/), which plugs into the MEP port of the meter.
+Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at [Dabbler.dk](http://dabbler.dk/), which plugs into the MEP port of the meter.  
+The MEP protocol documentation is now released, and it is expected that Dabbler.dks hardware and firmware for it will soon be published too.  
 Read more about it at [their blog](https://www.dabbler.dk/index.php/blog/).
-
-The protocol is still covered by NDA, but a prototype is working.
-This integration consumes a web service exposed from an ESP32 on the MEP module. It does not reveal any part of the protocol. 
 
 
 ## Installation
