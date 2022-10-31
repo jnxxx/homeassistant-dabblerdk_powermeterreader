@@ -132,12 +132,12 @@ class MeterReader:
                     energy_prev = self._data["Fwd_Act_Wh"]
                     energy_now = temp["Fwd_Act_Wh"]
 
-                    if energy_now is None:
+                    if not isinstance(energy_now, int):   # energy_now is None
                       _LOGGER.warn(f"Fwd_Act_Wh is None, sticking to previous values")
                       self._sticking_with_prev_value = True
                     else:
                       diff = energy_now - energy_prev
-                      if energy_prev is None or (diff >= 0 and diff <= 1000) or (datetime.utcnow()-self._succeed_timestamp).seconds >= 3600:
+                      if (not isinstance(energy_prev, int)) or (diff >= 0 and diff <= 1000) or (datetime.utcnow()-self._succeed_timestamp).seconds >= 3600:   # energy_prev is None
                         self._data = temp
                         self._succeed_timestamp = datetime.utcnow()
                       else:
