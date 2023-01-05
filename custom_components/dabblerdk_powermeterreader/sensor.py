@@ -7,7 +7,7 @@ import traceback
 
 from homeassistant import config_entries, core
 from homeassistant.core import callback
-from homeassistant.const import TEMP_CELSIUS, ELECTRIC_POTENTIAL_VOLT, ELECTRIC_CURRENT_AMPERE, POWER_WATT, DEVICE_CLASS_VOLTAGE, DEVICE_CLASS_CURRENT, DEVICE_CLASS_POWER, VOLUME_LITERS, PERCENTAGE, LENGTH_KILOMETERS, DEVICE_CLASS_BATTERY, ENERGY_KILO_WATT_HOUR, DEVICE_CLASS_ENERGY, FREQUENCY_HERTZ, DEVICE_CLASS_FREQUENCY
+from homeassistant.const import UnitOfEnergy, ELECTRIC_POTENTIAL_VOLT, ELECTRIC_CURRENT_AMPERE, POWER_WATT, FREQUENCY_HERTZ
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -18,7 +18,7 @@ from homeassistant.helpers.typing import (
 )
 from homeassistant.helpers.device_registry import DeviceEntryType
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorDeviceClass
 from homeassistant.exceptions import PlatformNotReady
 from .meter import MeterReader
 
@@ -92,32 +92,32 @@ class MeterEntity(Entity):
         self._dict = dict()
 
         if self._itemName == "energy consumption":
-            self._unit = ENERGY_KILO_WATT_HOUR
+            self._unit = UnitOfEnergy.KILO_WATT_HOUR
             self._icon = "mdi:home-import-outline"
-            self._device_class = DEVICE_CLASS_ENERGY
+            self._device_class = SensorDeviceClass.ENERGY
             self._dict["state_class"] = "total_increasing"
         elif self._itemName == "energy returned":
-            self._unit = ENERGY_KILO_WATT_HOUR
+            self._unit = UnitOfEnergy.KILO_WATT_HOUR
             self._icon = "mdi:home-export-outline"
-            self._device_class = DEVICE_CLASS_ENERGY
+            self._device_class = SensorDeviceClass.ENERGY
             self._dict["state_class"] = "total_increasing"
         elif self._itemName == "voltage":
             self._unit = ELECTRIC_POTENTIAL_VOLT
             self._icon = "mdi:lightning-bolt"
-            self._device_class = DEVICE_CLASS_VOLTAGE
+            self._device_class = SensorDeviceClass.VOLTAGE
         elif self._itemName == "current":
             self._unit = ELECTRIC_CURRENT_AMPERE
             self._icon = "mdi:current-ac"
-            self._device_class = DEVICE_CLASS_CURRENT
+            self._device_class = SensorDeviceClass.CURRENT
         elif self._itemName == "power" or self._itemName == "power returned":
             self._unit = POWER_WATT
             self._icon = "mdi:flash"
-            self._device_class = DEVICE_CLASS_POWER
+            self._device_class = SensorDeviceClass.POWER
             self._dict["state_class"] = "measurement"
         elif self._itemName == "frequency":
             self._unit = FREQUENCY_HERTZ
             self._icon = "mdi:sine-wave"
-            self._device_class = DEVICE_CLASS_FREQUENCY 
+            self._device_class = SensorDeviceClass.FREQUENCY 
 
         _LOGGER.debug(f"Adding sensor: {self._name}")
 

@@ -7,9 +7,9 @@ import traceback
 
 from homeassistant import config_entries, core
 from homeassistant.core import callback
-from homeassistant.const import TEMP_CELSIUS, ELECTRIC_POTENTIAL_VOLT, DEVICE_CLASS_VOLTAGE, DEVICE_CLASS_TEMPERATURE, VOLUME_LITERS, PERCENTAGE, LENGTH_KILOMETERS
+#from homeassistant.const import TEMP_CELSIUS
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.binary_sensor import BinarySensorEntity #,  BinarySensorEntityDescription
+from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass #,  BinarySensorEntityDescription
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import (
     ConfigType,
@@ -18,7 +18,6 @@ from homeassistant.helpers.typing import (
 )
 from homeassistant.helpers.device_registry import DeviceEntryType
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.exceptions import PlatformNotReady
 from .meter import MeterReader
 
@@ -41,8 +40,8 @@ async def async_setup_entry(
 
     try:
         sensors = []
-        sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Connection", "connectivity", True, True, _meterclient))
-        sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Problem", "problem", True, True, _meterclient))
+        sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Connection", BinarySensorDeviceClass.CONNECTIVITY, True, True, _meterclient))
+        sensors.append(MeterBinaryEntity(config_entry.entry_id, config["name"], "Problem", BinarySensorDeviceClass.PROBLEM, True, True, _meterclient))
         async_add_entities(sensors, update_before_add=True)
 
     except Exception as e:
