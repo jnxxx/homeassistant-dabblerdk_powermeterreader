@@ -35,6 +35,13 @@ class MeterReader:
         _LOGGER.debug("Meter init")
 
 
+    async def _get_metersn(self):
+      meter_sn = None
+      if self._data is not None:
+        meter_sn = self._data["Utility_SN"]
+      else:
+        meter_sn = await self._get_value(["Utility_SN"])
+      return(meter_sn)
 
     async def _get_value(self, selector):
       """Get selected attribures in vehicle data."""
@@ -112,44 +119,57 @@ class MeterReader:
 
           req_url = f"{url.geturl()}/getDashDataWS"
 
+          temp = None
           try:
             async with aiohttp.ClientSession() as session:
               async with session.get(req_url, headers = headers) as response:
                 temp = await response.json()
-#                temp = json.loads('')
-                self._connected = True
-                if temp is not None:
-                  _LOGGER.debug(f"Got meter data: {json.dumps(temp)}")
 
-                  # Debug: Log received data when L3 power is above 10000
-                  if (temp["L3_Fwd_W"] > 10000):
-                    _LOGGER.warn(f"L3_Fwd_W > 10000: {json.dumps(temp)}")
+              # temp = json.loads('')
+              self._connected = True
+              if temp is not None:
+                _LOGGER.debug(f"Got meter data: {json.dumps(temp)}")
 
-                  # Fwd_Act_Wh has been seen to jump temporarily, which messes up the delta when using state_class=total_increasing
-                  # Ignore negative or more than 1000 wh increase for an hour or until restarted.
-                  self._sticking_with_prev_value = False
-                  if self._data is not None:
-                    energy_prev = self._data["Fwd_Act_Wh"]
-                    energy_now = temp["Fwd_Act_Wh"]
+                # Fwd_Act_Wh has been seen to jump temporarily, which messes up the delta when using state_class=total_increasing
+                # Ignore negative or more than 1000 wh increase for an hour or until restarted.
+                stuck_with_prev_value = self._sticking_with_prev_value
+                self._sticking_with_prev_value = False
+                if self._data is not None:
+                  energy_prev = self._data["Fwd_Act_Wh"]
+                  energy_now = temp["Fwd_Act_Wh"]
 
-                    if not isinstance(energy_now, int):   # energy_now is None
-                      _LOGGER.warn(f"Fwd_Act_Wh is None, sticking to previous values")
-                      self._sticking_with_prev_value = True
-                    else:
-                      diff = energy_now - energy_prev
-                      if (not isinstance(energy_prev, int)) or (diff >= 0 and diff <= 1000) or (datetime.utcnow()-self._succeed_timestamp).seconds >= 3600:   # energy_prev is None
+                  if not isinstance(energy_now, int):   # energy_now is None
+                    _LOGGER.warn(f"Fwd_Act_Wh is None, sticking to previous values")
+                    self._sticking_with_prev_value = True
+                  else:
+                    diff = energy_now - energy_prev
+                    # _LOGGER.warn(f"(isinstance(energy_prev, int)): { (isinstance(energy_prev, int)) }")
+                    # _LOGGER.warn(f"(diff >= 0 and diff <= 1000): { (diff >= 0 and diff <= 1000) }")
+                    # _LOGGER.warn(f"((datetime.utcnow()-self._succeed_timestamp).seconds < 3600): { ((datetime.utcnow()-self._succeed_timestamp).seconds < 3600) }")
+
+                    if (isinstance(energy_prev, int)) and (diff >= 0 and diff <= 1000) and (datetime.utcnow()-self._succeed_timestamp).seconds < 3600:   # energy_prev is None
+                      sum_power = temp["L1_Fwd_W"] + temp["L2_Fwd_W"] + temp["L3_Fwd_W"]
+                      total_power = temp["Fwd_W"]
+                      if (total_power <= sum_power+3 and total_power >= sum_power-3):
                         self._data = temp
                         self._succeed_timestamp = datetime.utcnow()
+                        if stuck_with_prev_value:
+                          _LOGGER.warn(f"Resume-read meter data: {json.dumps(temp)}")
                       else:
-                        _LOGGER.warn(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
+                        _LOGGER.warn(f"L1_Fwd_W + L2_Fwd_W + L3_Fwd_W does not equal Fwd_W ({sum_power} != {total_power}), sticking to previous values")
+                        _LOGGER.warn(f"data: {json.dumps(temp)}")
                         self._sticking_with_prev_value = True
+                    else:
+                      _LOGGER.warn(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
+                      self._sticking_with_prev_value = True
 
-                  else:
-                    self._data = temp
-                    self._succeed_timestamp = datetime.utcnow()
-                  self._data_expires = datetime.utcnow()+timedelta(seconds=2)
                 else:
-                  raise Exception("empty_response")
+                  self._data = temp
+                  self._succeed_timestamp = datetime.utcnow()
+                  _LOGGER.warn(f"First meter data: {json.dumps(temp)}")
+                self._data_expires = datetime.utcnow()+timedelta(seconds=2)
+              else:
+                raise Exception("empty_response")
 
           except aiohttp.ClientError as client_error:
               _LOGGER.warn(f"Requesting meter values failed: {client_error}")

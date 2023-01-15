@@ -5,11 +5,17 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional
 import traceback
 
+from enum import IntEnum
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
 from homeassistant import config_entries, core
 from homeassistant.core import callback
 from homeassistant.const import UnitOfEnergy, ELECTRIC_POTENTIAL_VOLT, ELECTRIC_CURRENT_AMPERE, POWER_WATT, FREQUENCY_HERTZ
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import (
     ConfigType,
@@ -18,7 +24,6 @@ from homeassistant.helpers.typing import (
 )
 from homeassistant.helpers.device_registry import DeviceEntryType
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorDeviceClass
 from homeassistant.exceptions import PlatformNotReady
 from .meter import MeterReader
 
@@ -26,8 +31,101 @@ _LOGGER = logging.getLogger(__name__)
 from .const import DOMAIN
 
 #SCAN_INTERVAL = timedelta(minutes=5)
-
 _meterclient = None
+
+
+class EchelonSensorType(IntEnum):
+    """Supported sensor types."""
+
+    ENERGY_FWD = 0
+    ENERGY_REV = 1
+    VOLTAGE = 2
+    CURRENT = 3
+    POWER = 4
+    POWER_PHASE = 5
+    POWER_REV = 6
+    FREQUENCY = 7
+
+SENSORS = [
+    SensorEntityDescription(
+        key=EchelonSensorType.ENERGY_FWD,
+        device_class=SensorDeviceClass.ENERGY,
+        entity_category=None,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_registry_enabled_default=True,
+        icon="mdi:home-import-outline",
+        name="energy consumption",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.ENERGY_REV,
+        device_class=SensorDeviceClass.ENERGY,
+        entity_category=None,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_registry_enabled_default=False,
+        icon="mdi:home-export-outline",
+        name="energy returned",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.VOLTAGE,
+        device_class=SensorDeviceClass.VOLTAGE,
+        entity_category=None,
+        native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
+        entity_registry_enabled_default=False,
+        icon="mdi:lightning-bolt",
+        name="voltage",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.CURRENT,
+        device_class=SensorDeviceClass.CURRENT,
+        entity_category=None,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        entity_registry_enabled_default=False,
+        icon="mdi:current-ac",
+        name="current",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.POWER,
+        device_class=SensorDeviceClass.POWER,
+        entity_category=None,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=True,
+        icon="mdi:flash",
+        name="power",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.POWER_PHASE,
+        device_class=SensorDeviceClass.POWER,
+        entity_category=None,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        icon="mdi:flash",
+        name="power",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.POWER_REV,
+        device_class=SensorDeviceClass.POWER,
+        entity_category=None,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        icon="mdi:flash",
+        name="power returned",
+    ),
+    SensorEntityDescription(
+        key=EchelonSensorType.FREQUENCY,
+        device_class=SensorDeviceClass.FREQUENCY,
+        entity_category=None,
+        native_unit_of_measurement=FREQUENCY_HERTZ,
+        entity_registry_enabled_default=False,
+        icon="mdi:sine-wave",
+        name="frequency",
+    ),
+]
+
 
 async def async_setup_entry(
     hass: core.HomeAssistant,
@@ -38,26 +136,34 @@ async def async_setup_entry(
     #_LOGGER.debug(f"Config: {config}")
 
     _meterclient = config["meterclient"]
+    
+    # Make sure we can get meter SN as it is part of the unique_id
+    try:
+        meter_sn = await _meterclient._get_metersn()
+        if meter_sn is None:
+            raise PlatformNotReady
+    except Exception as e:
+        raise PlatformNotReady
 
     try:
         sensors = []
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "energy consumption", "", False, True, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "energy returned", "", True, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "voltage", "L1", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "voltage", "L2", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "voltage", "L3", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "current", "L1", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "current", "L2", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "current", "L3", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power", "", False, True, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power", "L1", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power", "L2", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power", "L3", False, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "", True, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L1", True, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L2", True, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "power returned", "L3", True, False, _meterclient))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "frequency", "", False, False, _meterclient))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "", False, _meterclient, SENSORS[EchelonSensorType.ENERGY_FWD], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "", True, _meterclient, SENSORS[EchelonSensorType.ENERGY_REV], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False, _meterclient, SENSORS[EchelonSensorType.VOLTAGE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False, _meterclient, SENSORS[EchelonSensorType.VOLTAGE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False, _meterclient, SENSORS[EchelonSensorType.VOLTAGE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False, _meterclient, SENSORS[EchelonSensorType.CURRENT], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False, _meterclient, SENSORS[EchelonSensorType.CURRENT], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False, _meterclient, SENSORS[EchelonSensorType.CURRENT], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "", False, _meterclient, SENSORS[EchelonSensorType.POWER], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False, _meterclient, SENSORS[EchelonSensorType.POWER_PHASE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False, _meterclient, SENSORS[EchelonSensorType.POWER_PHASE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False, _meterclient, SENSORS[EchelonSensorType.POWER_PHASE], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "", True, _meterclient, SENSORS[EchelonSensorType.POWER_REV], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", True, _meterclient, SENSORS[EchelonSensorType.POWER_REV], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", True, _meterclient, SENSORS[EchelonSensorType.POWER_REV], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", True, _meterclient, SENSORS[EchelonSensorType.POWER_REV], meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "", False, _meterclient, SENSORS[EchelonSensorType.FREQUENCY], meter_sn))
         async_add_entities(sensors, update_before_add=True)
 
     except Exception as e:
@@ -66,60 +172,27 @@ async def async_setup_entry(
         raise PlatformNotReady
 
 
-class MeterEntity(Entity):
+class MeterEntity(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, config_entry_id, meterName, itemName, phase, returned, entity_registry_enabled_default, meterclient):
+    def __init__(self, config_entry_id, meterName, phase, returned, meterclient, description: SensorEntityDescription, meter_sn):
         """Initialize the sensor."""
-        self._state = None
-        self._data_date = None
-        self._unit = None
+        self.entity_description = description
         self._config_entry_id = config_entry_id
         self._meterName = meterName
         self._manufacturer = None
         self._model = None
         self._sw_version = None
-        self._itemName = itemName
+        self._itemName = self.entity_description.name
         self._phase = phase
         self._returned = returned
-        self._icon = "mdi:home-import-outline"
-        self._name = f"{self._meterName} {self._phase} {self._itemName}".replace('  ', ' ')
-        self._unique_id = None # f"{DOMAIN}-{self._meterName.replace(' ', '')}-{self._phase}-{self._itemName}".replace('--', '-')
-        self._meter_sn = None
-        self._device_class = None
+        self._meter_sn = meter_sn
         self._meterclient = meterclient
-        self._entity_registry_enabled_default = entity_registry_enabled_default
-        self._dict = dict()
 
-        if self._itemName == "energy consumption":
-            self._unit = UnitOfEnergy.KILO_WATT_HOUR
-            self._icon = "mdi:home-import-outline"
-            self._device_class = SensorDeviceClass.ENERGY
-            self._dict["state_class"] = "total_increasing"
-        elif self._itemName == "energy returned":
-            self._unit = UnitOfEnergy.KILO_WATT_HOUR
-            self._icon = "mdi:home-export-outline"
-            self._device_class = SensorDeviceClass.ENERGY
-            self._dict["state_class"] = "total_increasing"
-        elif self._itemName == "voltage":
-            self._unit = ELECTRIC_POTENTIAL_VOLT
-            self._icon = "mdi:lightning-bolt"
-            self._device_class = SensorDeviceClass.VOLTAGE
-        elif self._itemName == "current":
-            self._unit = ELECTRIC_CURRENT_AMPERE
-            self._icon = "mdi:current-ac"
-            self._device_class = SensorDeviceClass.CURRENT
-        elif self._itemName == "power" or self._itemName == "power returned":
-            self._unit = POWER_WATT
-            self._icon = "mdi:flash"
-            self._device_class = SensorDeviceClass.POWER
-            self._dict["state_class"] = "measurement"
-        elif self._itemName == "frequency":
-            self._unit = FREQUENCY_HERTZ
-            self._icon = "mdi:sine-wave"
-            self._device_class = SensorDeviceClass.FREQUENCY 
-
-        _LOGGER.debug(f"Adding sensor: {self._name}")
+        self._attr_native_value = None
+        self._attr_name = f"{self._meterName} {self._phase} {self.entity_description.name}".replace('  ', ' ')
+        self._attr_unique_id = f"{DOMAIN}-{self._meter_sn}-{self._phase}-{self.entity_description.name}".replace('--', '-')
+        _LOGGER.debug(f"Adding sensor: {self._attr_name}, unique_id: {self._attr_unique_id}")
 
 
     @property
@@ -138,103 +211,61 @@ class MeterEntity(Entity):
         }
 
     @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def entity_registry_enabled_default(self):
-        return self._entity_registry_enabled_default
-
-    @property
-    def icon(self):
-        return self._icon
-
-    @property
-    def unique_id(self):
-        """The unique id of the sensor."""
-        #_LOGGER.debug(f"Returning unique_id: {self._unique_id}")
-        return self._unique_id
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._state
-
-    @property
     def available(self):
-        return (self._state is not None)
-
-    @property
-    def device_class(self):
-        return self._device_class
-
-    @property
-    def extra_state_attributes(self):
-        """Return state attributes."""
-        attributes = dict()
-        #attributes['state_class'] = self._state_class
-#        if self._device_class is not None:
-#            attributes['device_class'] = self._device_class
-        for key in self._dict:
-            attributes[key] = self._dict[key]
-        return attributes
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit
+        return (self._attr_native_value is not None)
 
     async def async_update(self):
         """Fetch new state data for the sensor.
         This is the only method that should fetch new data for Home Assistant.
         """
-        _LOGGER.debug(f"Setting status for {self._name}")
+        _LOGGER.debug(f"Setting status for {self._attr_name}")
 
-        self._state = None
+        self._attr_native_value = None
 
         try:
             # Unique ID
-            meter_sn = await self._meterclient._get_value(["Utility_SN"])
+            meter_sn = await self._meterclient._get_metersn()
             if meter_sn is not None:
-                self._meter_sn = meter_sn
-                self._unique_id = f"{DOMAIN}-{self._meter_sn}-{self._phase}-{self._itemName}".replace('--', '-')
+                if self._meter_sn != meter_sn:
+                    self._meter_sn = meter_sn
+                    self._attr_unique_id = f"{DOMAIN}-{self._meter_sn}-{self._phase}-{self.entity_description.name}".replace('--', '-')
 
             # Measurement
             if self._itemName == "energy consumption":
                 energy = await self._meterclient._get_value(["Fwd_Act_Wh"])
                 if (energy is not None):
-                    self._state = int(energy) / 1000
+                    self._attr_native_value = int(energy) / 1000
+                    # _LOGGER.warning(f"state: {self._attr_native_value}, attrib: {self.extra_state_attributes}")
             if self._itemName == "energy returned":
                 energy = await self._meterclient._get_value(["Rev_Act_Wh"])
                 if (energy is not None):
-                    self._state = int(energy) / 1000
+                    self._attr_native_value = int(energy) / 1000
             if self._itemName == "voltage":
                 voltage = await self._meterclient._get_value([ self._phase + "_RMS_V"])
                 if (voltage is not None):
-                    self._state = int(voltage) / 1000
+                    self._attr_native_value = int(voltage) / 1000
             if self._itemName == "current":
                 current = await self._meterclient._get_value([ self._phase + "_RMS_A"])
                 if (current is not None):
-                    self._state = int(current) / 1000
+                    self._attr_native_value = int(current) / 1000
             if self._itemName == "power" or self._itemName == "power returned":
                 prop = "Fwd_W" if self._returned == False else "Rev_W"
                 if (self._phase != ""):
                     prop = f"{self._phase}_{prop}"
                 power = await self._meterclient._get_value([prop])
                 if (power is not None):
-                    self._state = int(power)
+                    self._attr_native_value = int(power)
                 # current = await self._meterclient._get_value([ self._phase + "_RMS_A"])
                 # voltage = await self._meterclient._get_value([ self._phase + "_RMS_V"])
                 # if (current is not None and voltage is not None):
-                #     self._state = round((int(current) / 1000) * (int(voltage) / 1000), 3)
+                #     self._attr_native_value = round((int(current) / 1000) * (int(voltage) / 1000), 3)
             if self._itemName == "frequency":
                 frequency = await self._meterclient._get_value(["Freq_mHz"])
                 if (frequency is not None):
-                    self._state = int(frequency) / 1000
+                    self._attr_native_value = int(frequency) / 1000
 
         except Exception as e:
-            _LOGGER.warning(f"Failed to update sensor {self._name}: {e}")
+            _LOGGER.warning(f"Failed to update sensor {self._attr_name}: {e}")
             _LOGGER.debug(f"{traceback.format_exc()}")
 
         try:
@@ -242,9 +273,8 @@ class MeterEntity(Entity):
             self._model = await self._meterclient._get_value(["Meter_Model"])
             self._sw_version = await self._meterclient._get_value(["Meter_SW_Version"])
         except Exception as e:
-            _LOGGER.debug(f"Failed to get Manufacturer, Model & SW. Version {self._name}: {e}")
+            _LOGGER.debug(f"Failed to get Manufacturer, Model & SW. Version {self._attr_name}: {e}")
             _LOGGER.debug(f"{traceback.format_exc()}")
-
 
 
     @property
