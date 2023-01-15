@@ -9,7 +9,7 @@ This is a companion integration to the [Dabbler.dk](http://dabbler.dk/) MEP modu
 
 ## Hardware
 Communication is done through a hardware module built by the two enthusiasts, Gert and Graves, at [Dabbler.dk](http://dabbler.dk/), which plugs into the MEP port of the meter.  
-The MEP protocol documentation is now released, and it is expected that Dabbler.dks hardware and firmware for it will soon be published too.  
+The MEP protocol documentation is now released. How to build the hardware and the firmware for it is published in their [Github repositories](https://github.com/DabblerDK).  
 Read more about it at [their blog](https://www.dabbler.dk/index.php/blog/).
 
 
@@ -42,16 +42,26 @@ Adjustable from 5 seconds to an hour (maybe even lower when tested better).
 ## State and attributes
 For each MEP modules connected to, it presents two devices. One to represent the MEP module and one to represent the meter.
 
-MEP module sensors:
+**MEP module sensors** 
 * MEP Connection (true if latest request succeeded)
 * MEP Problem (true if the data returned is not as expected)
   
-Meter sensors, consumption:
+**Meter sensors**  
+Consumption (Forward):  
 * Energy consumption [kWh] (same value as in the display)
 * Power [W] (total, all phases)
 * L1 power [W]
 * L2 power [W]
 * L3 power [W]
+  
+Returned to grid (Reverse):  
+* Energy returned [kWh]
+* Power returned (all phases) [W]
+* L1 power returned [W]
+* L2 power returned [W]
+* L3 power returned [W]
+  
+Other:  
 * L1 current [A]
 * L2 current [A]
 * L3 current [A]
@@ -59,14 +69,7 @@ Meter sensors, consumption:
 * L2 voltage [V]
 * L3 voltage [V]
 * Frequency [Hz]
-
-Meter sensors, returned to grid:
-* Energy returned [kWh]
-* Power returned (all phases) [W]
-* L1 power returned [W]
-* L2 power returned [W]
-* L3 power returned [W]
-
+  
 Only energy consumption and total power are enabled by default, but you can enable and disable as you wish.
 
 
