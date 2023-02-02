@@ -109,7 +109,7 @@ class MeterReader:
                     _LOGGER.debug(f"  Url: {url.geturl()}")
                     break
           except BaseException as err:
-            _LOGGER.warn(f"Zeroconf failed. {err}")
+            _LOGGER.warning(f"Zeroconf failed. {err}")
           #logging.getLogger('zeroconf').setLevel(logging.WARNING)
 
           headers = {
@@ -139,40 +139,41 @@ class MeterReader:
                   energy_now = temp["Fwd_Act_Wh"]
 
                   if not isinstance(energy_now, int):   # energy_now is None
-                    _LOGGER.warn(f"Fwd_Act_Wh is None, sticking to previous values")
+                    _LOGGER.warning(f"Fwd_Act_Wh is None, sticking to previous values")
                     self._sticking_with_prev_value = True
                   else:
                     diff = energy_now - energy_prev
-                    # _LOGGER.warn(f"(isinstance(energy_prev, int)): { (isinstance(energy_prev, int)) }")
-                    # _LOGGER.warn(f"(diff >= 0 and diff <= 1000): { (diff >= 0 and diff <= 1000) }")
-                    # _LOGGER.warn(f"((datetime.utcnow()-self._succeed_timestamp).seconds < 3600): { ((datetime.utcnow()-self._succeed_timestamp).seconds < 3600) }")
+                    # _LOGGER.warning(f"(isinstance(energy_prev, int)): { (isinstance(energy_prev, int)) }")
+                    # _LOGGER.warning(f"(diff >= 0 and diff <= 1000): { (diff >= 0 and diff <= 1000) }")
+                    # _LOGGER.warning(f"((datetime.utcnow()-self._succeed_timestamp).seconds < 3600): { ((datetime.utcnow()-self._succeed_timestamp).seconds < 3600) }")
 
                     if (isinstance(energy_prev, int)) and (diff >= 0 and diff <= 1000) and (datetime.utcnow()-self._succeed_timestamp).seconds < 3600:   # energy_prev is None
                       sum_power = temp["L1_Fwd_W"] + temp["L2_Fwd_W"] + temp["L3_Fwd_W"]
-                      total_power = temp["Fwd_W"]
+                      sum_power -= (temp["L1_Rev_W"] + temp["L2_Rev_W"] + temp["L3_Rev_W"])
+                      total_power = temp["Fwd_W"] - temp["Rev_W"]
                       if (total_power <= sum_power+3 and total_power >= sum_power-3):
                         self._data = temp
                         self._succeed_timestamp = datetime.utcnow()
                         if stuck_with_prev_value:
-                          _LOGGER.warn(f"Resume-read meter data: {json.dumps(temp)}")
+                          _LOGGER.warning(f"Resume-read meter data: {json.dumps(temp)}")
                       else:
-                        _LOGGER.warn(f"L1_Fwd_W + L2_Fwd_W + L3_Fwd_W does not equal Fwd_W ({sum_power} != {total_power}), sticking to previous values")
-                        _LOGGER.warn(f"data: {json.dumps(temp)}")
+                        _LOGGER.warning(f"L1 [W] + L2 [W] + L3 [W] does not equal Total [W] ({sum_power} != {total_power}), sticking to previous values")
+                        _LOGGER.warning(f"data: {json.dumps(temp)}")
                         self._sticking_with_prev_value = True
                     else:
-                      _LOGGER.warn(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
+                      _LOGGER.warning(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
                       self._sticking_with_prev_value = True
 
                 else:
                   self._data = temp
                   self._succeed_timestamp = datetime.utcnow()
-                  _LOGGER.warn(f"First meter data: {json.dumps(temp)}")
+                  _LOGGER.warning(f"First meter data: {json.dumps(temp)}")
                 self._data_expires = datetime.utcnow()+timedelta(seconds=2)
               else:
                 raise Exception("empty_response")
 
           except aiohttp.ClientError as client_error:
-              _LOGGER.warn(f"Requesting meter values failed: {client_error}")
+              _LOGGER.warning(f"Requesting meter values failed: {client_error}")
               raise Exception(f"Requesting meter values failed: {client_error}")
 
 #        _LOGGER.debug(f"_get_meter_data end: {dbgcnt}, time: {self._data_expires}")
