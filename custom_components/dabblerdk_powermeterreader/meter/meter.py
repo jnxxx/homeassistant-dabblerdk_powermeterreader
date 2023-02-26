@@ -147,7 +147,13 @@ class MeterReader:
                     # _LOGGER.warning(f"(diff >= 0 and diff <= 1000): { (diff >= 0 and diff <= 1000) }")
                     # _LOGGER.warning(f"((datetime.utcnow()-self._succeed_timestamp).seconds < 3600): { ((datetime.utcnow()-self._succeed_timestamp).seconds < 3600) }")
 
-                    if (isinstance(energy_prev, int)) and (diff >= 0 and diff <= 1000) and (datetime.utcnow()-self._succeed_timestamp).seconds < 3600:   # energy_prev is None
+                    elapsed_time = 60 if (self._succeed_timestamp is None) else (datetime.utcnow()-self._succeed_timestamp).total_seconds()
+                    if (elapsed_time < 60):
+                      elapsed_time = 60
+                    wh_limit = 16*3*230/3600 * 3 * elapsed_time
+                    _LOGGER.debug("wh_limit: %f", wh_limit)
+
+                    if ((isinstance(energy_prev, int)) and (diff >= 0 and diff <= wh_limit)) or elapsed_time > 1800:
                       sum_power = temp["L1_Fwd_W"] + temp["L2_Fwd_W"] + temp["L3_Fwd_W"]
                       sum_power -= (temp["L1_Rev_W"] + temp["L2_Rev_W"] + temp["L3_Rev_W"])
                       total_power = temp["Fwd_W"] - temp["Rev_W"]
@@ -161,7 +167,7 @@ class MeterReader:
                         _LOGGER.warning(f"data: {json.dumps(temp)}")
                         self._sticking_with_prev_value = True
                     else:
-                      _LOGGER.warning(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values")
+                      _LOGGER.warning(f"Fwd_Act_Wh changed too much ({diff}), sticking to previous values. wh_limit: {wh_limit}")
                       self._sticking_with_prev_value = True
 
                 else:
