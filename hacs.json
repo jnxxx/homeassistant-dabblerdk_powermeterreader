@@ -1,5 +1,7 @@
 {
   "name": "Dabbler.dk reader for Echelon/NES smart power meter",
   "render_readme": true,
-  "country": "DK"
+  "homeassistant": "2022.11.0",
+  "zip_release": true,
+  "filename": "dabblerdk_powermeterreader.zip"
 }
