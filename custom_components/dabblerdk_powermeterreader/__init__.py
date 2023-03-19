@@ -5,11 +5,11 @@ import asyncio
 from datetime import timedelta
 
 from homeassistant import config_entries, core
-from .meter import MeterReader
-from .const import DOMAIN
-from homeassistant.helpers.dispatcher import async_dispatcher_send, dispatcher_send
+from homeassistant.helpers.dispatcher import async_dispatcher_send  # , dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.const import CONF_SCAN_INTERVAL
+from .const import DOMAIN
+from .meter import MeterReader
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "binary_sensor"]
@@ -20,24 +20,27 @@ async def async_setup_entry(
 ) -> bool:
     """Set up platform from a ConfigEntry."""
     hass.data.setdefault(DOMAIN, {})
-    _LOGGER.debug(f"async_setup_entry: [{DOMAIN}][{entry.entry_id}]")
+    _LOGGER.debug("async_setup_entry: [%s][%s]", DOMAIN, entry.entry_id)
 
     data = dict(entry.data)
 
     # Registers update listener to update config entry when options are updated, and store a reference to the unsubscribe function
-    data["unsub_options_update_listener"] = entry.add_update_listener(options_update_listener)
+    data["unsub_options_update_listener"] = entry.add_update_listener(
+        options_update_listener
+    )
 
     # Custom function to trigger polling
-    async def signal_refresh(event_time=None):
-        """Call ArloHub to refresh information."""
+    async def signal_refresh(event_time=None):  # pylint: disable=unused-argument
+        """Call MEP to refresh information."""
         signal = f"{DOMAIN}_{entry.entry_id}_refresh"
-        _LOGGER.debug(f"Signal_refresh: {signal}")
-        #hass.data[DATA_ARLO].update(update_cameras=True, update_base_station=True)
-        dispatcher_send(hass, signal)
-    # Setup repeating timer
-    scan_interval = timedelta(seconds= entry.options.get(CONF_SCAN_INTERVAL, 300) )
-    data["timer_remove"] = async_track_time_interval(hass, signal_refresh, scan_interval)
+        _LOGGER.debug("Signal_refresh: %s", signal)
+        async_dispatcher_send(hass, signal)
 
+    # Setup repeating timer
+    scan_interval = timedelta(seconds=entry.options.get(CONF_SCAN_INTERVAL, 300))
+    data["timer_remove"] = async_track_time_interval(
+        hass, signal_refresh, scan_interval
+    )
 
     # data["email"] = entry.data["email"]
     # data["password"] = entry.data["password"]
@@ -45,7 +48,7 @@ async def async_setup_entry(
     data["name"] = entry.data["name"]
     data["url"] = entry.data["url"]
     data["meterclient"] = MeterReader(entry.data["url"], hass)
-    hass.data[DOMAIN][entry.entry_id] = data #entry.data
+    hass.data[DOMAIN][entry.entry_id] = data  # entry.data
 
     # Forward the setup to the sensor platform.
     for component in PLATFORMS:
@@ -53,11 +56,13 @@ async def async_setup_entry(
             hass.config_entries.async_forward_entry_setup(entry, component)
         )
 
-#    await signal_refresh()
+    #    await signal_refresh()
     return True
 
 
-async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
+async def async_setup(
+    hass: core.HomeAssistant, config: dict  # pylint: disable=unused-argument
+) -> bool:
     """Set up the GitHub Custom component from yaml configuration."""
     hass.data.setdefault(DOMAIN, {})
     return True
@@ -76,9 +81,9 @@ async def async_unload_entry(
     """Unload a config entry."""
 
     data = hass.data[DOMAIN][entry.entry_id]
-    
+
     # Cancel previous timer
-    if (('timer_remove' in data) and (data["timer_remove"] is not None)):
+    if ("timer_remove" in data) and (data["timer_remove"] is not None):
         _LOGGER.debug("Remove timer")
         data["timer_remove"]()
 
@@ -103,4 +108,3 @@ async def async_unload_entry(
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
-    
