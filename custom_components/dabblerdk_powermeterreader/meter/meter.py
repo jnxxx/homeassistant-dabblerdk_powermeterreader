@@ -1,30 +1,31 @@
 """Wrapper for dabbler.dk MEP module."""
 
-import logging
-from datetime import datetime
-from datetime import timedelta
-import json
-from urllib.parse import urlparse
 import asyncio
+from datetime import UTC, datetime, timedelta
+import json
+import logging
+from urllib.parse import urlparse
+
 import aiohttp
-from homeassistant.components import zeroconf
 from zeroconf.asyncio import AsyncServiceInfo
+
+from homeassistant.components import zeroconf
+from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class MeterReader:
-    """
-    Primary exported interface for dabbler.dk MEP module wrapper.
-    """
+    """Primary exported interface for dabbler.dk MEP module wrapper."""
 
-    def __init__(self, target_url, hass):
+    def __init__(self, target_url, hass: HomeAssistant) -> None:
+        """Initialize."""
         self._base_url = target_url.strip("/")
         self._data = None
         self._data_expires = None
         self._lockUpdate = asyncio.Lock()
         #        self._fail_count = 0
-        self._succeed_timestamp = datetime.utcnow()
+        self._succeed_timestamp = datetime.now(tz=UTC)  # datetime.utcnow()
         self._connected = False
         self._sticking_with_prev_value = False
         self._hass = hass
@@ -67,7 +68,7 @@ class MeterReader:
         return ret
 
     async def is_stuck_with_prev_value(self):
-        """Get bool indicating if stuck with cahed data or freshly read"""
+        """Get bool indicating if stuck with cahed data or freshly read."""
         ret = None
         async with self._lockUpdate:
             ret = self._sticking_with_prev_value
@@ -83,7 +84,7 @@ class MeterReader:
             if (
                 self._data_expires is None
                 or self._data is None
-                or datetime.utcnow() > self._data_expires
+                or datetime.now(tz=UTC) > self._data_expires
             ):
                 self._data_expires = None
                 # self._data = None
@@ -162,7 +163,8 @@ class MeterReader:
                                         60
                                         if (self._succeed_timestamp is None)
                                         else (
-                                            datetime.utcnow() - self._succeed_timestamp
+                                            datetime.now(tz=UTC)
+                                            - self._succeed_timestamp
                                         ).total_seconds()
                                     )
                                     if elapsed_time < 60:
@@ -190,7 +192,9 @@ class MeterReader:
                                             and total_power >= sum_power - 3
                                         ):
                                             self._data = temp
-                                            self._succeed_timestamp = datetime.utcnow()
+                                            self._succeed_timestamp = datetime.now(
+                                                tz=UTC
+                                            )
                                             if stuck_with_prev_value:
                                                 _LOGGER.warning(
                                                     "Resume-read meter data: %s",
@@ -203,7 +207,7 @@ class MeterReader:
                                                 total_power,
                                             )
                                             _LOGGER.warning(
-                                                "data: %s", json.dumps(temp)
+                                                "Data: %s", json.dumps(temp)
                                             )
                                             self._sticking_with_prev_value = True
                                     else:
@@ -216,19 +220,19 @@ class MeterReader:
 
                             else:
                                 self._data = temp
-                                self._succeed_timestamp = datetime.utcnow()
+                                self._succeed_timestamp = datetime.now(tz=UTC)
                                 _LOGGER.warning(
                                     "First meter data: %s", json.dumps(temp)
                                 )
-                            self._data_expires = datetime.utcnow() + timedelta(
+                            self._data_expires = datetime.now(tz=UTC) + timedelta(
                                 seconds=2
                             )
                         else:
-                            raise Exception("empty_response")
+                            raise Exception("empty_response")  # pylint: disable=broad-exception-raised
 
                 except aiohttp.ClientError as client_error:
                     _LOGGER.warning("Requesting meter values failed: %s", client_error)
-                    raise Exception(
+                    raise Exception(  # pylint: disable=broad-exception-raised
                         f"Requesting meter values failed: {client_error}"
                     ) from client_error
 

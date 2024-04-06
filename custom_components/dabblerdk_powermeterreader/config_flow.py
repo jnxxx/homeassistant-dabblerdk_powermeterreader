@@ -1,18 +1,15 @@
 """Support for dabblerdk_powermeterreader."""
 
 import logging
-from typing import Any, Dict, Optional
 import re
+from typing import Any, Optional  # , Dict
+
+import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_URL,
-    CONF_SCAN_INTERVAL,
-)
-from homeassistant.core import callback
+from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL, CONF_URL
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 
 from .const import DOMAIN
 from .meter import MeterReader
@@ -30,11 +27,11 @@ CONN_SCHEMA = vol.Schema(
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """dabblerdk_powermeterreader config flow."""
 
-    data: Optional[Dict[str, Any]]
+    data: Optional[dict[str, Any]]
 
-    async def async_step_user(self, user_input: Optional[Dict[str, Any]] = None):
-        """Invoked when a user initiates a flow via the user interface."""
-        errors: Dict[str, str] = {}
+    async def async_step_user(self, user_input: Optional[dict[str, Any]] = None):
+        """User initiates a flow via the user interface."""
+        errors: dict[str, str] = {}
         if user_input is not None:
             if user_input[CONF_NAME] == "":
                 errors[CONF_NAME] = "empty_name"
@@ -68,24 +65,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
+        """Initiate options flow."""
         return OptionsFlowHandler(config_entry)
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """dabblerdk_powermeterreader options flow."""
 
-    def __init__(self, config_entry):
+    def __init__(self, config_entry) -> None:
         """Initialize options flow."""
         self.config_entry = config_entry
 
     async def async_step_init(
-        self, user_input: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
+        self, user_input: dict[str, Any] = None
+    ) -> dict[str, Any]:
         """Manage the options."""
-        errors: Dict[str, str] = {}
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-
             # Check url
             await fnCheckUrl(user_input[CONF_URL], self.hass, errors)
 
@@ -125,7 +122,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         )
 
 
-async def fnCheckUrl(url, hass, errors: Dict[str, str]):
+async def fnCheckUrl(url, hass: HomeAssistant, errors: dict[str, str]):
     """Check if url is working."""
     if (
         re.search(r"^http(s){0,1}:\/\/[a-zA-Z0-9_\-\.]+(:\d+){0,1}\/{0,1}$", url)
@@ -162,7 +159,7 @@ async def fnCheckUrl(url, hass, errors: Dict[str, str]):
 
         except Exception as err:  # pylint: disable=broad-except
             # _LOGGER.debug(err)
-            print(err)
+            # print(err)
             if str(err) == "empty_response":
                 errors[CONF_URL] = "empty_response"
             # elif str(err).startswith("Requesting meter values failed:"):

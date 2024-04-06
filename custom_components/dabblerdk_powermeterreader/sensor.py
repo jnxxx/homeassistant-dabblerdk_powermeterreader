@@ -1,31 +1,27 @@
 """Support for dabblerdk_powermeterreader."""
 
+from enum import IntEnum
 import logging
-
-# from datetime import datetime, timedelta
-# from typing import Any, Callable, Dict, Optional
 import traceback
 
-from enum import IntEnum
+from homeassistant import config_entries, core
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant import config_entries, core
-from homeassistant.core import callback
 from homeassistant.const import (
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
     UnitOfEnergy,
-    ELECTRIC_POTENTIAL_VOLT,
-    ELECTRIC_CURRENT_AMPERE,
-    POWER_WATT,
-    FREQUENCY_HERTZ,
+    UnitOfFrequency,
+    UnitOfPower,
 )
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.core import callback
 from homeassistant.exceptions import PlatformNotReady
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-# from homeassistant.helpers import device_registry as dr
 from .const import DOMAIN
 from .meter import MeterReader
 
@@ -70,7 +66,7 @@ SENSORS = [
         key=EchelonSensorType.VOLTAGE,
         device_class=SensorDeviceClass.VOLTAGE,
         entity_category=None,
-        native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         entity_registry_enabled_default=False,
         icon="mdi:lightning-bolt",
         name="voltage",
@@ -79,7 +75,7 @@ SENSORS = [
         key=EchelonSensorType.CURRENT,
         device_class=SensorDeviceClass.CURRENT,
         entity_category=None,
-        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         entity_registry_enabled_default=False,
         icon="mdi:current-ac",
         name="current",
@@ -88,7 +84,7 @@ SENSORS = [
         key=EchelonSensorType.POWER,
         device_class=SensorDeviceClass.POWER,
         entity_category=None,
-        native_unit_of_measurement=POWER_WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=True,
         icon="mdi:flash",
@@ -98,7 +94,7 @@ SENSORS = [
         key=EchelonSensorType.POWER_PHASE,
         device_class=SensorDeviceClass.POWER,
         entity_category=None,
-        native_unit_of_measurement=POWER_WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         icon="mdi:flash",
@@ -108,7 +104,7 @@ SENSORS = [
         key=EchelonSensorType.POWER_REV,
         device_class=SensorDeviceClass.POWER,
         entity_category=None,
-        native_unit_of_measurement=POWER_WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         icon="mdi:flash",
@@ -118,7 +114,7 @@ SENSORS = [
         key=EchelonSensorType.FREQUENCY,
         device_class=SensorDeviceClass.FREQUENCY,
         entity_category=None,
-        native_unit_of_measurement=FREQUENCY_HERTZ,
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
         entity_registry_enabled_default=False,
         icon="mdi:sine-wave",
         name="frequency",
@@ -201,7 +197,7 @@ class MeterEntity(SensorEntity):
         meterclient,
         description: SensorEntityDescription,
         meter_sn,
-    ):
+    ) -> None:
         """Initialize the sensor."""
         self.entity_description = description
         self._config_entry_id = config_entry_id
@@ -230,6 +226,7 @@ class MeterEntity(SensorEntity):
 
     @property
     def device_info(self):
+        """Device properties."""
         return {
             "identifiers": {
                 # Serial numbers are unique identifiers within a specific domain
@@ -245,6 +242,7 @@ class MeterEntity(SensorEntity):
 
     @property
     def available(self):
+        """Device availability."""
         return self._attr_native_value is not None
 
     async def async_update(self):
@@ -281,8 +279,8 @@ class MeterEntity(SensorEntity):
                 current = await self._meterclient.get_value([self._phase + "_RMS_A"])
                 if current is not None:
                     self._attr_native_value = int(current) / 1000
-            if self._itemName == "power" or self._itemName == "power returned":
-                prop = "Fwd_W" if self._returned == False else "Rev_W"
+            if self._itemName in ("power", "power returned"):
+                prop = "Fwd_W" if not self._returned else "Rev_W"
                 if self._phase != "":
                     prop = f"{self._phase}_{prop}"
                 power = await self._meterclient.get_value([prop])
@@ -317,7 +315,7 @@ class MeterEntity(SensorEntity):
 
     @property
     def should_poll(self):
-        """Should Home Assistant check with the entity for an updated state?"""
+        """Should Home Assistant check with the entity for an updated state?."""
         return False
 
     async def async_added_to_hass(self):

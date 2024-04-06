@@ -1,18 +1,19 @@
 """Support for dabblerdk_powermeterreader."""
 
-import logging
 import asyncio
 from datetime import timedelta
+import logging
 
 from homeassistant import config_entries, core
+from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.helpers.dispatcher import async_dispatcher_send  # , dispatcher_send
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.const import CONF_SCAN_INTERVAL
+
 from .const import DOMAIN
 from .meter import MeterReader
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = ["sensor", "binary_sensor"]
+PLATFORMS = ["binary_sensor", "sensor"]
 
 
 async def async_setup_entry(
@@ -61,7 +62,8 @@ async def async_setup_entry(
 
 
 async def async_setup(
-    hass: core.HomeAssistant, config: dict  # pylint: disable=unused-argument
+    hass: core.HomeAssistant,
+    config: dict,  # pylint: disable=unused-argument
 ) -> bool:
     """Set up the GitHub Custom component from yaml configuration."""
     hass.data.setdefault(DOMAIN, {})
@@ -87,13 +89,20 @@ async def async_unload_entry(
         _LOGGER.debug("Remove timer")
         data["timer_remove"]()
 
-    unloaded = []
-    for component in PLATFORMS:
-        unloaded.append(
-            await asyncio.gather(
-                *[hass.config_entries.async_forward_entry_unload(entry, component)]
-            )
+    unloaded = [
+        await asyncio.gather(
+            *[hass.config_entries.async_forward_entry_unload(entry, component)]
         )
+        for component in PLATFORMS
+    ]
+    #    unloaded = []
+    #    for component in PLATFORMS:
+    #        unloaded.append(
+    #            await asyncio.gather(
+    #                *[hass.config_entries.async_forward_entry_unload(entry, component)]
+    #            )
+    #        )
+
     unload_ok = all(unloaded)
     #         await asyncio.gather(
     #             *[hass.config_entries.async_forward_entry_unload(entry, component)]

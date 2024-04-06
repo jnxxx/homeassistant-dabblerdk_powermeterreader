@@ -1,6 +1,6 @@
 {
   "domain": "dabblerdk_powermeterreader",
-  "name": "Dabbler.dk reader for Echelon/NES smart power meter",  
+  "name": "Dabbler.dk reader for Echelon/NES smart power meter",
   "codeowners": ["@jnxxx"],
   "config_flow": true,
   "dependencies": ["zeroconf"],
@@ -11,6 +11,6 @@
   "issue_tracker": "https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/issues",
   "requirements": [],
   "ssdp": [],
-  "version": "1.0.4",
+  "version": "1.0.5",
   "zeroconf": []
 }

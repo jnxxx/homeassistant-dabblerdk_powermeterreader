@@ -1,18 +1,19 @@
 """Support for dabblerdk_powermeterreader."""
 
+from enum import IntEnum
 import logging
 import traceback
 
-from enum import IntEnum
 from homeassistant import config_entries, core
-from homeassistant.core import callback
 from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
-    BinarySensorDeviceClass,
 )
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.core import callback
 from homeassistant.exceptions import PlatformNotReady
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
 from .const import DOMAIN
 from .meter import MeterReader
 
@@ -87,7 +88,8 @@ class MeterBinaryEntity(BinarySensorEntity):
         meterclient,
         description: BinarySensorEntityDescription,
         meter_sn,
-    ):
+    ) -> None:
+        """Initialize the binarysensor."""
         self.entity_description = description
         self._meterName = meterName if is_mep is False else f"{meterName} MEP"
         self._itemName = self.entity_description.name
@@ -114,6 +116,7 @@ class MeterBinaryEntity(BinarySensorEntity):
 
     @property
     def device_info(self):
+        """Device properties."""
         identifier = self._meter_sn if not self._is_mep else f"{self._meter_sn}_MEP"
         return {
             "identifiers": {
@@ -130,6 +133,7 @@ class MeterBinaryEntity(BinarySensorEntity):
 
     @property
     def available(self):
+        """Device availability."""
         return self._attr_is_on is not None
 
     async def async_update(self):
@@ -229,7 +233,7 @@ class MeterBinaryEntity(BinarySensorEntity):
 
     @property
     def should_poll(self):
-        """Should Home Assistant check with the entity for an updated state?"""
+        """Should Home Assistant check with the entity for an updated state?."""
         return False
 
     async def async_added_to_hass(self):
