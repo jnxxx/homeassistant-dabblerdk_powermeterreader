@@ -11,6 +11,7 @@
   "issue_tracker": "https://github.com/jnxxx/homeassistant-dabblerdk_powermeterreader/issues",
   "requirements": [],
   "ssdp": [],
-  "version": "1.0.5",
+  "version": "1.0.6",
   "zeroconf": []
 }
+ 
