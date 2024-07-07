@@ -85,25 +85,14 @@ async def async_unload_entry(
         _LOGGER.debug("Remove timer")
         data["timer_remove"]()
 
-    unloaded = [
-        await asyncio.gather(
-            *[hass.config_entries.async_forward_entry_unload(entry, component)]
-        )
-        for component in PLATFORMS
-    ]
-    #    unloaded = []
-    #    for component in PLATFORMS:
-    #        unloaded.append(
-    #            await asyncio.gather(
-    #                *[hass.config_entries.async_forward_entry_unload(entry, component)]
-    #            )
-    #        )
-
-    unload_ok = all(unloaded)
-    #         await asyncio.gather(
-    #             *[hass.config_entries.async_forward_entry_unload(entry, component)]
-    #         )
-    # )
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # unloaded = [
+    #    await asyncio.gather(
+    #        *[hass.config_entries.async_forward_entry_unload(entry, component)]
+    #    )
+    #    for component in PLATFORMS
+    # ]
+    # unload_ok = all(unloaded)
 
     # Remove options_update_listener.
     hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
