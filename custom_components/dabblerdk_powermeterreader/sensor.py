@@ -20,6 +20,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.exceptions import PlatformNotReady
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from .const import DOMAIN
@@ -140,26 +141,31 @@ async def async_setup_entry(
     except Exception as err:
         raise PlatformNotReady from err
 
+    mep_device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=config_entry.entry_id,
+        identifiers={(DOMAIN, f"{meter_sn}_MEP")},
+    )
+
     try:
         # fmt: off
         sensors = []
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.ENERGY_FWD],    meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   True,   _meterclient, SENSORS[EchelonSensorType.ENERGY_REV],    meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.POWER],         meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn))
-        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.FREQUENCY],     meter_sn))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.ENERGY_FWD],    meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   True,   _meterclient, SENSORS[EchelonSensorType.ENERGY_REV],    meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.VOLTAGE],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.CURRENT],       meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.POWER],         meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", False,  _meterclient, SENSORS[EchelonSensorType.POWER_PHASE],   meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L1", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L2", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "L3", True,   _meterclient, SENSORS[EchelonSensorType.POWER_REV],     meter_sn, mep_device.id))
+        sensors.append(MeterEntity(config_entry.entry_id, config["name"], "",   False,  _meterclient, SENSORS[EchelonSensorType.FREQUENCY],     meter_sn, mep_device.id))
         async_add_entities(sensors, update_before_add=True)
         # fmt: on
 
@@ -197,10 +203,12 @@ class MeterEntity(SensorEntity):
         meterclient,
         description: SensorEntityDescription,
         meter_sn,
+        via_device_id,
     ) -> None:
         """Initialize the sensor."""
         self.entity_description = description
         self._config_entry_id = config_entry_id
+        self._via_device_id = via_device_id
         self._meterName = meterName
         self._manufacturer = None
         self._model = None
@@ -237,7 +245,7 @@ class MeterEntity(SensorEntity):
             "model": self._model,
             "sw_version": self._sw_version,
             # "entry_type": DeviceEntryType.SERVICE,
-            "via_device": (DOMAIN, f"{self._meter_sn}_MEP"),
+            "via_device_id": self._via_device_id,
         }
 
     @property
